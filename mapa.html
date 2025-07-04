@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zonas Agrícolas de Exportación - Ecuador</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+        
+        .subtitle {
+            margin-top: 10px;
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .map-container {
+            position: relative;
+            padding: 30px;
+            background: #f8f9fa;
+        }
+        
+        .map-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            align-items: start;
+        }
+        
+        .map-svg {
+            width: 100%;
+            height: 600px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .ecuador-map-container {
+            position: relative;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow: hidden;
+            height: 600px;
+        }
+        
+        .ecuador-map-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.8;
+        }
+        
+        .map-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, rgba(52, 152, 219, 0.1), rgba(46, 204, 113, 0.1));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+        }
+        
+        .map-title {
+            font-size: 2em;
+            font-weight: bold;
+            text-align: center;
+            background: rgba(0,0,0,0.3);
+            padding: 20px;
+            border-radius: 10px;
+            backdrop-filter: blur(5px);
+        }
+        
+        @media (max-width: 768px) {
+            .map-section {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .region {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .region:hover {
+            transform: scale(1.05);
+            filter: brightness(1.1);
+        }
+        
+        .tooltip {
+            position: absolute;
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 14px;
+            max-width: 300px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 30px;
+            justify-content: center;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: white;
+            padding: 10px 15px;
+            border-radius: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .legend-item:hover {
+            transform: translateY(-2px);
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+        }
+        
+        .info-panel {
+            background: white;
+            margin: 20px 30px;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            display: none;
+        }
+        
+        .info-panel.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .crop-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .crop-tag {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌾 Zonas Agrícolas de Exportación</h1>
+            <div class="subtitle">República del Ecuador</div>
+        </div>
+        
+        <div class="map-container">
+            <div class="map-section">
+                <div class="ecuador-map-container">
+                    <img src="./mapa.png" 
+                         alt="Mapa del Ecuador" class="ecuador-map-image">
+                    <div class="map-overlay">
+                        <div class="map-title">
+                            🇪🇨 REPÚBLICA DEL ECUADOR<br>
+                            <span style="font-size: 0.6em; font-weight: normal;">Regiones Naturales</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <svg class="map-svg" viewBox="0 0 800 600">
+                <!-- Mapa simplificado del Ecuador -->
+                
+                <!-- Costa -->
+                <g class="region" data-region="costa">
+                    <!-- Esmeraldas -->
+                    <circle cx="120" cy="150" r="35" fill="#27ae60" opacity="0.8"/>
+                    <text x="120" y="110" text-anchor="middle" font-size="12" font-weight="bold">Esmeraldas</text>
+                    
+                    <!-- Manabí -->
+                    <ellipse cx="140" cy="220" rx="40" ry="30" fill="#27ae60" opacity="0.8"/>
+                    <text x="140" y="180" text-anchor="middle" font-size="12" font-weight="bold">Manabí</text>
+                    
+                    <!-- Guayas -->
+                    <ellipse cx="170" cy="320" rx="45" ry="35" fill="#27ae60" opacity="0.8"/>
+                    <text x="170" y="280" text-anchor="middle" font-size="12" font-weight="bold">Guayas</text>
+                    
+                    <!-- Los Ríos -->
+                    <ellipse cx="200" cy="280" rx="35" ry="25" fill="#27ae60" opacity="0.8"/>
+                    <text x="200" y="250" text-anchor="middle" font-size="12" font-weight="bold">Los Ríos</text>
+                    
+                    <!-- El Oro -->
+                    <circle cx="150" cy="400" r="30" fill="#27ae60" opacity="0.8"/>
+                    <text x="150" y="445" text-anchor="middle" font-size="12" font-weight="bold">El Oro</text>
+                </g>
+                
+                <!-- Sierra -->
+                <g class="region" data-region="sierra">
+                    <!-- Carchi -->
+                    <circle cx="280" cy="120" r="25" fill="#e74c3c" opacity="0.8"/>
+                    <text x="280" y="100" text-anchor="middle" font-size="12" font-weight="bold">Carchi</text>
+                    
+                    <!-- Imbabura -->
+                    <circle cx="290" cy="160" r="30" fill="#e74c3c" opacity="0.8"/>
+                    <text x="290" y="140" text-anchor="middle" font-size="12" font-weight="bold">Imbabura</text>
+                    
+                    <!-- Pichincha -->
+                    <ellipse cx="310" cy="200" rx="35" ry="25" fill="#e74c3c" opacity="0.8"/>
+                    <text x="310" y="180" text-anchor="middle" font-size="12" font-weight="bold">Pichincha</text>
+                    
+                    <!-- Cotopaxi -->
+                    <circle cx="330" cy="240" r="25" fill="#e74c3c" opacity="0.8"/>
+                    <text x="330" y="220" text-anchor="middle" font-size="12" font-weight="bold">Cotopaxi</text>
+                    
+                    <!-- Tungurahua -->
+                    <circle cx="350" cy="280" r="25" fill="#e74c3c" opacity="0.8"/>
+                    <text x="350" y="260" text-anchor="middle" font-size="12" font-weight="bold">Tungurahua</text>
+                    
+                    <!-- Chimborazo -->
+                    <circle cx="320" cy="320" r="30" fill="#e74c3c" opacity="0.8"/>
+                    <text x="320" y="300" text-anchor="middle" font-size="12" font-weight="bold">Chimborazo</text>
+                    
+                    <!-- Azuay -->
+                    <ellipse cx="340" cy="380" rx="35" ry="25" fill="#e74c3c" opacity="0.8"/>
+                    <text x="340" y="360" text-anchor="middle" font-size="12" font-weight="bold">Azuay</text>
+                    
+                    <!-- Loja -->
+                    <ellipse cx="320" cy="440" rx="30" ry="25" fill="#e74c3c" opacity="0.8"/>
+                    <text x="320" y="420" text-anchor="middle" font-size="12" font-weight="bold">Loja</text>
+                </g>
+                
+                <!-- Oriente -->
+                <g class="region" data-region="oriente">
+                    <!-- Sucumbíos -->
+                    <ellipse cx="480" cy="140" rx="40" ry="25" fill="#f39c12" opacity="0.8"/>
+                    <text x="480" y="120" text-anchor="middle" font-size="12" font-weight="bold">Sucumbíos</text>
+                    
+                    <!-- Orellana -->
+                    <ellipse cx="500" cy="200" rx="35" ry="25" fill="#f39c12" opacity="0.8"/>
+                    <text x="500" y="180" text-anchor="middle" font-size="12" font-weight="bold">Orellana</text>
+                    
+                    <!-- Pastaza -->
+                    <ellipse cx="450" cy="280" rx="40" ry="30" fill="#f39c12" opacity="0.8"/>
+                    <text x="450" y="260" text-anchor="middle" font-size="12" font-weight="bold">Pastaza</text>
+                    
+                    <!-- Morona Santiago -->
+                    <ellipse cx="420" cy="360" rx="35" ry="40" fill="#f39c12" opacity="0.8"/>
+                    <text x="420" y="340" text-anchor="middle" font-size="12" font-weight="bold">Morona Santiago</text>
+                    
+                    <!-- Zamora Chinchipe -->
+                    <ellipse cx="380" cy="440" rx="30" ry="35" fill="#f39c12" opacity="0.8"/>
+                    <text x="380" y="420" text-anchor="middle" font-size="12" font-weight="bold">Zamora Chinchipe</text>
+                </g>
+                
+                <!-- Galápagos -->
+                <g class="region" data-region="galapagos">
+                    <circle cx="680" cy="350" r="25" fill="#3498db" opacity="0.8"/>
+                    <text x="680" y="330" text-anchor="middle" font-size="12" font-weight="bold">Galápagos</text>
+                </g>
+                
+                <!-- Línea ecuatorial -->
+                <line x1="50" y1="200" x2="550" y2="200" stroke="#2c3e50" stroke-width="2" stroke-dasharray="5,5" opacity="0.5"/>
+                <text x="300" y="195" text-anchor="middle" font-size="10" fill="#2c3e50">Línea Ecuatorial</text>
+            </svg>
+            </div>
+            
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #27ae60;"></div>
+                    <span>Costa - Banano, Cacao, Camarón</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #e74c3c;"></div>
+                    <span>Sierra - Flores, Brócoli, Quinua</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #f39c12;"></div>
+                    <span>Oriente - Café, Cacao Fino</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #3498db;"></div>
+                    <span>Galápagos - Café Especial</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="info-panel" id="info-costa">
+            <h3>🌴 Región Costa</h3>
+            <p><strong>Principales productos de exportación:</strong></p>
+            <div class="crop-list">
+                <span class="crop-tag">Banano</span>
+                <span class="crop-tag">Cacao</span>
+                <span class="crop-tag">Camarón</span>
+                <span class="crop-tag">Atún</span>
+                <span class="crop-tag">Mango</span>
+                <span class="crop-tag">Maracuyá</span>
+                <span class="crop-tag">Palmito</span>
+            </div>
+            <p><strong>Características:</strong> Clima tropical, suelos fértiles, acceso a puertos. Es la región más importante para la exportación de productos tradicionales.</p>
+        </div>
+        
+        <div class="info-panel" id="info-sierra">
+            <h3>🏔️ Región Sierra</h3>
+            <p><strong>Principales productos de exportación:</strong></p>
+            <div class="crop-list">
+                <span class="crop-tag">Flores</span>
+                <span class="crop-tag">Brócoli</span>
+                <span class="crop-tag">Quinua</span>
+                <span class="crop-tag">Café</span>
+                <span class="crop-tag">Frutas andinas</span>
+                <span class="crop-tag">Hortalizas</span>
+            </div>
+            <p><strong>Características:</strong> Clima templado, diferentes pisos altitudinales, ideal para cultivos de exportación no tradicionales y flores.</p>
+        </div>
+        
+        <div class="info-panel" id="info-oriente">
+            <h3>🌿 Región Oriente</h3>
+            <p><strong>Principales productos de exportación:</strong></p>
+            <div class="crop-list">
+                <span class="crop-tag">Café especial</span>
+                <span class="crop-tag">Cacao fino</span>
+                <span class="crop-tag">Frutas amazónicas</span>
+                <span class="crop-tag">Plantas medicinales</span>
+            </div>
+            <p><strong>Características:</strong> Clima tropical húmedo, alta biodiversidad, productos orgánicos y de comercio justo.</p>
+        </div>
+        
+        <div class="info-panel" id="info-galapagos">
+            <h3>🏝️ Galápagos</h3>
+            <p><strong>Principales productos de exportación:</strong></p>
+            <div class="crop-list">
+                <span class="crop-tag">Café especial</span>
+                <span class="crop-tag">Productos orgánicos</span>
+            </div>
+            <p><strong>Características:</strong> Producción limitada y especializada, enfoque en productos orgánicos y sostenibles.</p>
+        </div>
+    </div>
+    
+    <div class="tooltip" id="tooltip"></div>
+    
+    <script>
+        const regions = document.querySelectorAll('.region');
+        const tooltip = document.getElementById('tooltip');
+        const infoPanels = document.querySelectorAll('.info-panel');
+        
+        const regionData = {
+            costa: {
+                name: "Región Costa",
+                products: ["Banano", "Cacao", "Camarón", "Atún", "Mango", "Maracuyá", "Palmito"],
+                description: "Principal región exportadora de productos tradicionales"
+            },
+            sierra: {
+                name: "Región Sierra",
+                products: ["Flores", "Brócoli", "Quinua", "Café", "Frutas andinas", "Hortalizas"],
+                description: "Líder en exportación de flores y productos no tradicionales"
+            },
+            oriente: {
+                name: "Región Oriente",
+                products: ["Café especial", "Cacao fino", "Frutas amazónicas", "Plantas medicinales"],
+                description: "Productos orgánicos y de alta calidad"
+            },
+            galapagos: {
+                name: "Galápagos",
+                products: ["Café especial", "Productos orgánicos"],
+                description: "Producción sostenible y especializada"
+            }
+        };
+        
+        regions.forEach(region => {
+            region.addEventListener('mouseenter', (e) => {
+                const regionName = e.currentTarget.dataset.region;
+                const data = regionData[regionName];
+                
+                tooltip.innerHTML = `
+                    <strong>${data.name}</strong><br>
+                    <em>${data.description}</em><br>
+                    <strong>Productos:</strong> ${data.products.join(', ')}
+                `;
+                tooltip.style.opacity = '1';
+            });
+            
+            region.addEventListener('mousemove', (e) => {
+                tooltip.style.left = e.pageX + 10 + 'px';
+                tooltip.style.top = e.pageY + 10 + 'px';
+            });
+            
+            region.addEventListener('mouseleave', () => {
+                tooltip.style.opacity = '0';
+            });
+            
+            region.addEventListener('click', (e) => {
+                const regionName = e.currentTarget.dataset.region;
+                
+                // Ocultar todos los paneles
+                infoPanels.forEach(panel => {
+                    panel.classList.remove('active');
+                });
+                
+                // Mostrar el panel correspondiente
+                document.getElementById(`info-${regionName}`).classList.add('active');
+                
+                // Scroll suave al panel
+                document.getElementById(`info-${regionName}`).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+    </script>
+    <div style="
+    text-align: center; 
+    margin: 20px auto; 
+    font-size: 1.2em; 
+    color: #444; 
+    background: #ffffff; 
+    padding: 20px; 
+    border-radius: 15px; 
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); 
+    max-width: 800px; 
+    line-height: 1.6;">
+        <p>
+            Ecuador cuenta con diversas zonas agrícolas que destacan por su riqueza natural y variedad de productos de exportación. 
+            Desde la Costa con su producción de banano y cacao, hasta la Sierra con flores y quinua, el Oriente con su cacao fino, 
+            y las Galápagos con productos orgánicos, cada región aporta al desarrollo económico del país.
+        </p>
+    </div>
+    
+    <div>
+        <p style="text-align: center;
+         background: linear-gradient(135deg, #667eea 0%);
+          width: auto;
+          height: 50px;
+          color: white;
+          align-items: center;
+          padding: 10px;
+          font-size: 20px;
+          font-weight: bold;
+          margin-top: 10px;
+          margin-bottom: 10px;
+          border-radius: 20px;
+          ">          <strong>PAGINA ELABORADA POR EL ASPIRANTE ROYER JOEL CHICAIZA TANDAYAMO DE PRIMER AÑO</strong>
+        </p>
+    </div>
+
+    
+
+</body>
+</html>
